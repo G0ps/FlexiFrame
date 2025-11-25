@@ -5,7 +5,7 @@ launchApp.py
 [
     * This folder will run all the services parallely and by a single execution.
     * Example service was created and "error and output verified"
-]
 
-scripts :
-python launchApp.py
+    INSTRUCTION : 
+    * all the packages relevant to the services must be in the main directory
+]

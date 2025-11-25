@@ -12,9 +12,13 @@ pip install -r requirements.txt
 
 # installing requirements for the project
 
+# on launchApp.py change the `python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"` with your proper directory's "myenv/Scripts/python.exe"
+
 python launchApp.py
 
 # launches the application
+
+
 
 ======================= script ==========================
 
