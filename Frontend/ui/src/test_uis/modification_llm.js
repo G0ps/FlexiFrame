@@ -1,72 +1,59 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function TestWebSocket() {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const wsRef = useRef(null);
+const uiString = `{
+  "type": "div",
+  "props": { "style": { "padding": "20px", "backgroundColor": "#eee" } },
+  "children": [
+    { "type": "h1", "children": ["Hello World"] },
+    {
+      "type": "ul",
+      "children": [
+        { "type": "li", "children": ["Item 1"] },
+        { "type": "li", "children": ["Item 2"] },
+        { "type": "li", "children": ["Item 3"] }
+      ]
+    }
+  ]
+}`;
+
+function stringToReact(node) {
+  if (typeof node === "string") {
+    try {
+      node = JSON.parse(node);
+    } catch {
+      return node; // Plain text fallback
+    }
+  }
+
+  if (node === null || node === undefined) return null;
+  if (typeof node === "string" || typeof node === "number") return node;
+  if (Array.isArray(node)) return node.map((child, idx) => <React.Fragment key={idx}>{stringToReact(child)}</React.Fragment>);
+
+  const { type = "div", props = {}, children = [] } = node;
+
+  const resolvedProps = { ...props };
+
+  // Convert string event handlers safely
+  Object.keys(resolvedProps).forEach((key) => {
+    if (key.startsWith("on") && typeof resolvedProps[key] === "string") {
+      try {
+        resolvedProps[key] = new Function("event", resolvedProps[key]);
+      } catch {
+        console.warn("Failed to parse event handler");
+      }
+    }
+  });
+
+  return React.createElement(type, resolvedProps, stringToReact(children));
+}
+
+export default function ModificationLLM({ dynamicJson }) {
+  const [outlet, setOutlet] = useState(null);
 
   useEffect(() => {
-    // Connect to WebSocket
-    const ws = new WebSocket("ws://localhost:1001/ws/chat");
-    wsRef.current = ws;
+    // If dynamicJson is passed, use it; otherwise use static uiString
+    setOutlet(stringToReact(dynamicJson || uiString));
+  }, [dynamicJson]);
 
-    ws.onopen = () => {
-      console.log("Connected to server");
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        console.log("Received:", data);
-        setMessages((prev) => [...prev, data]);
-      } catch (err) {
-        console.error("Error parsing JSON:", err);
-      }
-    };
-
-    ws.onerror = (err) => console.error("WebSocket error:", err);
-    ws.onclose = () => console.log("WebSocket closed");
-
-    return () => {
-      ws.close();
-    };
-  }, []);
-
-  const sendMessage = () => {
-    if (!input.trim() || !wsRef.current) return;
-    wsRef.current.send(input);
-    setInput("");
-  };
-
-  const onKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Test WebSocket</h2>
-      <textarea
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder="Type your prompt..."
-        style={{ width: "100%", height: 50 }}
-      />
-      <button onClick={sendMessage} style={{ marginTop: 10 }}>
-        Send
-      </button>
-
-      <div style={{ marginTop: 20 }}>
-        <h3>Responses:</h3>
-        {messages.map((msg, idx) => (
-          <pre key={idx} style={{ background: "#f0f0f0", padding: 10 }}>
-            {JSON.stringify(msg, null, 2)}
-          </pre>
-        ))}
-      </div>
-    </div>
-  );
+  return <div>{outlet}</div>;
 }

@@ -6,7 +6,7 @@ export default function App() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div>
+    <div className="UpperLayer" id="UpperMostDiv">
       <div className="App">
         <h1>WebSocket Test App</h1>
         <TestWebSocket />

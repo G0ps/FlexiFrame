@@ -24,6 +24,9 @@ export default function ChatBox({ onClose }) {
       setMessages((m) => [...m, { role: "assistant", content: event.data }]);
       setLoading(false);
 
+
+      next_process_after_receiving_response(event.data);
+
       // Scroll to bottom
       setTimeout(() => {
         bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
@@ -116,6 +119,38 @@ export default function ChatBox({ onClose }) {
           Send
         </button>
       </div>
+      <button onClick={() => {clear_UI()}}> clear_UI </button>
     </div>
   );
+}
+
+
+function next_process_after_receiving_response(data_k)
+{
+  const {action} = data_k;
+
+  if(action === "append_UI")
+  {
+    append_UI(data_k);
+  }
+  else if(action === "modify_UI")
+  {
+    modify_UI(data_k);
+  }
+}
+
+function append_UI(data_k){
+  const newFunction = new Function(data_k.UI_design)
+  const data = data_k.data
+  console.log("Data look : " , data);
+  newFunction(data_k);
+}
+
+function modify_UI(data_k){
+
+}
+
+function clear_UI()
+{
+
 }
