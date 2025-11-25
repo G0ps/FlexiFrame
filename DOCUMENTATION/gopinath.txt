@@ -1,0 +1,11 @@
+11/25/2025
+Tuesday
+
+launchApp.py
+[
+    * This folder will run all the services parallely and by a single execution.
+    * Example service was created and "error and output verified"
+]
+
+scripts :
+python launchApp.py
