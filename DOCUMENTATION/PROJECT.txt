@@ -1,0 +1,21 @@
+======================================================================================
+
+PROJECT SETUP
+
+======================= script ==========================
+
+pip install venv myenv
+
+# then activate the environment
+
+pip install -r requirements.txt
+
+# installing requirements for the project
+
+python launchApp.py
+
+# launches the application
+
+======================= script ==========================
+
+======================================================================================
