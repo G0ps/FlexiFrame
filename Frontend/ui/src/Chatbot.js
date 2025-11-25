@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
+import './style.css';
 
 export default function ChatBox({ onClose }) {
   const [messages, setMessages] = useState([
@@ -24,8 +25,9 @@ export default function ChatBox({ onClose }) {
       });
       const data = await resp.json();
       const assistantReply = data.reply || "No reply";
-      setMessages((m) => [...m, { role: "assistant", content: assistantReply }]);
-     
+      setMessages((m) => [...m, { role: "assistant", content: assistantReply }] );
+
+      // scroll to bottom after new message
       setTimeout(() => {
         bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
       }, 50);
@@ -44,51 +46,34 @@ export default function ChatBox({ onClose }) {
   };
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: "80px",
-        right: "20px",
-        width: "320px",
-        height: "420px",
-        background: "white",
-        borderRadius: "12px",
-        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-        padding: "10px",
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 9999,
-      }}
-    >
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 }}>
+    <div className="chatbox-container">
+      <div className="chatbox-header">
         <strong>AI Chat</strong>
-        <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer" }}>
-          X
-        </button>
+        <button className="chatbox-close" onClick={onClose}>X</button>
       </div>
 
-       <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f8f8f8", borderRadius: 6 }}>
+      <div className="chatbox-body" ref={bodyRef}>
         {messages.map((m, i) => (
-          <div key={i} style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: "#666" }}>{m.role}</div>
-            <div style={{ whiteSpace: "pre-wrap", background: m.role === "assistant" ? "#fff" : "#e6f0ff", padding: 8, borderRadius: 6 }}>
+          <div key={i} className="message-wrap">
+            <div className="message-role">{m.role}</div>
+            <div className={`message ${m.role === 'assistant' ? 'assistant' : 'user'}`}>
               {m.content}
             </div>
           </div>
         ))}
-        {loading && <div style={{ fontStyle: "italic", fontSize: 13 }}>Assistant is typing...</div>}
+        {loading && <div className="typing">Assistant is typing...</div>}
       </div>
 
-       <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+      <div className="chatbox-input">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder="Type message..."
-          style={{ flex: 1, padding: 8, borderRadius: 6, resize: "none", height: 50 }}
+          className="chat-input"
         />
-        <button onClick={sendMessage} style={{ padding: "8px 12px", borderRadius: 6, background: "#007bff", color: "white", border: "none" }}>
-          Send
+        <button className="send-btn" onClick={sendMessage} disabled={loading}>
+          {loading ? 'Sending...' : 'Send'}
         </button>
       </div>
     </div>
