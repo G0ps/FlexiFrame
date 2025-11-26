@@ -22,3 +22,10 @@ to avoid that , need to figure out a sollution
 
 input -> llm (it samples input and builds a function that takes "actual input" as parameter) -> string -> json -> react_component
 
+
+
+26/11/2025
+WEDNESDAY
+
+* Decided to make the , mcp service "rest"
+* Nivas made the UI structure and working on prompt 

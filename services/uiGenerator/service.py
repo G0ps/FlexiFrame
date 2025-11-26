@@ -5,7 +5,6 @@ import os
 import json
 import uuid
 
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -14,11 +13,24 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 app = FastAPI(title="AExampleService")
 
+# ---------------------------
+# Import your BIG JSON UI
+# ---------------------------
+try:
+    from tool_parser import load_tool_details
+    big_ui_json_string = load_tool_details()
+    print("UI JSON")
+    print(big_ui_json_string)
+except Exception as e:
+    print("ERROR: Cannot import ui_json_big:", e)
+    big_ui_json_string = '{"error": "UI JSON not loaded"}'
 
 
+# ---------------------------
+# Connected WebSocket Clients
+# ---------------------------
+connected_clients = {}
 
-
-connected_clients = {} 
 async def send_to_client(client_id: str, data: dict):
     websocket = connected_clients.get(client_id)
     if websocket:
@@ -27,84 +39,62 @@ async def send_to_client(client_id: str, data: dict):
         except Exception as e:
             print(f"Error sending to {client_id}: {e}")
 
-def build_prompt(val : str):
-    prompt = f"""
-    
-    """
-    return prompt
+
+# ---------------------------
+# Dummy prompt builder (not used)
+# ---------------------------
+def build_prompt(val: str):
+    return val
 
 
-from llm_test import GeminiLLM
+# ---------------------------
+# WebSocket Endpoint
+# ---------------------------
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+
     client_id = str(uuid.uuid4())
     connected_clients[client_id] = websocket
     print(f"Client connected: {client_id}")
 
-    # llm = GeminiLLM()  # Instantiate LLM client
-
     try:
         while True:
-            # Receive prompt from client
             user_input = await websocket.receive_text()
             print(f"Received from {client_id}: {user_input}")
 
+            # Get prompt (unused)
             prompt = build_prompt(user_input)
 
-            # Send prompt to Gemini LLM
-            # response_text = llm.send_llm(prompt)
-            # print(f"LLM response for you : \n{response_text}")
-
-
-            #temperoray input must be removed and filled with logic*******
-            input_data = [
-                {"weight": 1000, "height": 10000},
-                {"weight": 1000, "height": 10000},
-                {"weight": 1000, "height": 10000},
-                {"weight": 1000, "height": 10000},
-                {"weight": 1000, "height": 10000},
-                {"weight": 1000, "height": 10000, "size": 1000}
-            ]
-
-            output_data = "<div> name <div>"
-
-
-
-            # Send JSON response back to client
+            # SEND UI JSON TO FRONTEND
             await send_to_client(client_id, {
                 "status": "success",
                 "client_id": client_id,
-                "response": output_data,
-                "input" : json.dumps(input_data)
+                "response": "ui_update",
+                "input": big_ui_json_string  # send entire UI JSON to React
             })
 
     except WebSocketDisconnect:
         print(f"Client disconnected: {client_id}")
-        del connected_clients[client_id]
+        if client_id in connected_clients:
+            del connected_clients[client_id]
 
 
-
-
-
-
-
-
-# -----------------------------
-# Entry point for launcher
-# -----------------------------
-
-
+# ---------------------------
+# Launcher
+# ---------------------------
 if __name__ == "__main__":
     import uvicorn
 
-    # Get port from command-line argument, default 8000
     try:
         port_index = sys.argv.index("--port") + 1
         port = int(sys.argv[port_index])
     except (ValueError, IndexError):
         port = 2000
 
-    # uvicorn.run with the current file as module
-    # Since launcher sets cwd=service_dir, we can use "service:app"
-    uvicorn.run("service:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run(
+        "service:app",
+        host="0.0.0.0",
+        port=port,
+        reload=False
+    )
