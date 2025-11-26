@@ -16,12 +16,12 @@ class llm_interface(ABC):
 # Concrete implementation using Google Gemini
 class GeminiLLM(llm_interface):
     def __init__(self):
-        gemini_api_key = os.environ.get("GEMINI_FLASH__API_KEY_1__modification_service")
+        gemini_api_key = os.environ.get("GEMINI_FLASH__API_KEY_2__modification_service")
         self.client = genai.Client(api_key=gemini_api_key)
 
     def send_llm(self, prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         return response.text

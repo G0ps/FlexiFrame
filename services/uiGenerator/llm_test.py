@@ -21,7 +21,7 @@ class GeminiLLM(llm_interface):
 
     def send_llm(self, prompt: str) -> str:
         response = self.client.models.generate_content(
-            model="gemini-flash-latest",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         return response.text
@@ -52,3 +52,5 @@ class GeminiLLM(llm_interface):
         
 #         # Return fully sanitized string
 #         return self._safe_string(raw_text)  # text contains the model's output
+
+

@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 # Import the unified handler
 from prompt_handler import PromptHandler
 
-app = FastAPI(title="main_service")
+app = FastAPI(title="mcp")
 
 from llm_test import GeminiLLM;
 llm = GeminiLLM()
@@ -27,6 +27,9 @@ async def handle_prompt(payload: dict):
         "version": "v1"   # optional
     }
     """
+
+    print("Payload received on mcp from ui Gen")
+    print(payload)
     prompt = payload.get("prompt")
     version = payload.get("version", "v1")
 
@@ -37,15 +40,22 @@ async def handle_prompt(payload: dict):
         }
 
     handler = PromptHandler(version)
-    result = handler.run(prompt)
+
+    input_prompt = json.loads(prompt)
+
+    result = handler.run(input_prompt.get("input"))
     result_str = json.dumps(result, indent=4)
+
+    print("prompt sent to llm , on a go from mcp : ")
+    print( result_str )
+    
     response_text = llm.send_llm(result_str)
     print("Response you got : ")
     print( response_text )
 
-    # print("Sabari's code response : ")
+    print("Sabari's code response : ")
     datat_sab = get_val(json.loads(response_text) , fetch = True);
-    # print(datat_sab);
+    print(datat_sab);
 
     return {
         "status": "success",

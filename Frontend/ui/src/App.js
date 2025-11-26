@@ -3,6 +3,20 @@ import ChatBox from "./Chatbot.js";
 import TestWebSocket from "./test_uis/modification_llm.js";
 import ModificationLLM from "./test_uis/modification_llm.js";
 
+function convertToJson(inputString) {
+  try {
+    // If the string contains escaped quotes, first fix it
+    const cleaned = inputString.trim();
+
+    // Convert to JSON
+    const jsonObj = JSON.parse(cleaned);
+    return jsonObj;
+  } catch (err) {
+    console.error("Failed to parse JSON:", err.message);
+    return null;
+  }
+}
+
 export default function App() {
 
   const [open, setOpen] = useState(false);
@@ -35,6 +49,7 @@ export default function App() {
         console.log("Event , ", event)
         const data = JSON.parse(event.data);
         console.log("Data : " , data.input)
+        console.log("TYpe of that : " , typeof convertToJson(data.input));
         if (data.status === "success" && data.input) {
           console.log("Updating testJson with socket data");
 
@@ -56,60 +71,61 @@ export default function App() {
   // Send message to socket
   const sendHello = () => {
     if (socket?.readyState === WebSocket.OPEN) {
-      socket.send("hello");
+      socket.send("give me data of the 10 todos with a minimal");
       console.log("Sent → hello");
     }
   };
 
   return (
-    <div className="UpperLayer" id="UpperMostDiv">
+  <div className="UpperLayer" id="UpperMostDiv">
 
-      <div className="App">
-        <h1>WebSocket Test App</h1>
-
-        <button
-          onClick={sendHello}
-          style={{
-            padding: "10px 14px",
-            backgroundColor: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            marginBottom: "20px"
-          }}
-        >
-          Send Hello to Socket
-        </button>
-
-        <TestWebSocket />
-      </div>
-
-      <h1>WELCOME TO AI CHAT</h1>
-
-      {/* 🔥 Pass dynamic JSON to your renderer */}
-      <ModificationLLM inputString={JSON.stringify(testJson)} />
-
-      {open && <ChatBox onClose={() => setOpen(false)} />}
+    <div className="App">
+      <h1>WebSocket Test App</h1>
 
       <button
-        onClick={() => setOpen(true)}
+        onClick={sendHello}
         style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "20px",
-          padding: "12px 18px",
-          borderRadius: "50%",
-          backgroundColor: "#007bff",
+          padding: "10px 14px",
+          backgroundColor: "#28a745",
           color: "white",
           border: "none",
+          borderRadius: "8px",
           cursor: "pointer",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-          fontSize: "16px",
+          marginBottom: "20px"
         }}
       >
-        Chat
+        Send Hello to Socket
       </button>
+
+      <TestWebSocket />
     </div>
-  );
+
+    <h1>WELCOME TO AI CHAT</h1>
+
+    {/* 🔥 Pass dynamic JSON to your renderer */}
+    <ModificationLLM inputString={JSON.stringify(testJson)} />
+
+    {/* 🔹 Pass setTestJson as setView */}
+    {open && <ChatBox onClose={() => setOpen(false)} setView={setTestJson} />}
+
+    <button
+      onClick={() => setOpen(true)}
+      style={{
+        position: "fixed",
+        bottom: "20px",
+        right: "20px",
+        padding: "12px 18px",
+        borderRadius: "50%",
+        backgroundColor: "#007bff",
+        color: "white",
+        border: "none",
+        cursor: "pointer",
+        boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+        fontSize: "16px",
+      }}
+    >
+      Chat
+    </button>
+  </div>
+);
 }

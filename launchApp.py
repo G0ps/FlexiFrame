@@ -9,10 +9,12 @@ load_dotenv()
 env = os.environ.copy()
 env["PYTHONPATH"] = os.path.abspath(os.path.dirname(__file__))
 
-python_executable = r"D:\FlexiFrame\myenv\Scripts\python.exe"
+python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"
 
 services = [
-    {"name": "service_llm", "file": "services/controller/service.py", "port": "1000"}
+    {"name": "controller", "file": "services/controller/service.py", "port": "1000"},
+    {"name": "mcp", "file": "services/mcp/service.py", "port": "1003"},
+    {"name": "uiGenerator", "file": "services/uiGenerator/service.py", "port": "2000"}
 ]
 
 processes = []
@@ -26,7 +28,7 @@ def stream_output(pipe, service_name, pipe_type):
             line = str(line)
         if line:
             print(line)
-    print(f"=============== END {service_name} ({pipe_type}) ===============")
+            print(f"=============== END {service_name} ({pipe_type}) ===============")
 try:
     for service in services:
         service_file = os.path.abspath(service["file"])

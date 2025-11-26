@@ -1,6 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 
-export default function ChatBox({ onClose }) {
+function convertToJson(inputString) {
+  try {
+    const cleaned = inputString.trim();
+    const jsonObj = JSON.parse(cleaned);
+    return jsonObj;
+  } catch (err) {
+    console.error("Failed to parse JSON:", err.message);
+    return null;
+  }
+}
+
+export default function ChatBox({ onClose, setView }) {
   const [messages, setMessages] = useState([
     { role: "system", content: "You are a helpful assistant." }
   ]);
@@ -9,38 +20,46 @@ export default function ChatBox({ onClose }) {
   const bodyRef = useRef();
   const wsRef = useRef(null);
 
-  // Initialize WebSocket
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:1000/ws/chat");
     wsRef.current = ws;
 
     ws.onopen = () => {
       console.log("Connected to server");
-      ws.send("Hello server!");
     };
 
     ws.onmessage = (event) => {
-      console.log("Received:", event.data);
-      setMessages((m) => [...m, { role: "assistant", content: event.data }]);
-      setLoading(false);
+      console.log("Received input:", event.data);
+      try {
+        const json_parsed = JSON.parse(event.data);
 
+        setMessages((m) => [...m, { role: "assistant", content: event.data }]);
+        setLoading(false);
 
-      next_process_after_receiving_response(event.data);
+        // 🔹 Dynamic UI update: use setView on each socket response
+        if (json_parsed.input) {
+          const parsedUI = convertToJson(json_parsed.input);
+          if (parsedUI) {
+            console.log("Updating parent UI state with:", parsedUI.ui);
+            setView(parsedUI.ui); // dynamic state update
+          }
+        }
 
-      // Scroll to bottom
-      setTimeout(() => {
-        bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
-      }, 50);
+        // Scroll to bottom
+        setTimeout(() => {
+          bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
+        }, 50);
+
+      } catch (err) {
+        console.error("Failed to parse WebSocket message:", err);
+      }
     };
 
     ws.onclose = () => console.log("WebSocket closed");
     ws.onerror = (err) => console.error("WebSocket error:", err);
 
-    return () => {
-      ws.close();
-    };
-
-  }, []);
+    return () => ws.close();
+  }, [setView]);
 
   const sendMessage = () => {
     if (!input.trim() || !wsRef.current) return;
@@ -50,7 +69,6 @@ export default function ChatBox({ onClose }) {
     setInput("");
     setLoading(true);
 
-    // Send via WebSocket
     wsRef.current.send(input);
   };
 
@@ -80,9 +98,7 @@ export default function ChatBox({ onClose }) {
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 }}>
         <strong>AI Chat</strong>
-        <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer" }}>
-          X
-        </button>
+        <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer" }}>X</button>
       </div>
 
       <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f8f8f8", borderRadius: 6 }}>
@@ -119,38 +135,10 @@ export default function ChatBox({ onClose }) {
           Send
         </button>
       </div>
-      <button onClick={() => {clear_UI()}}> clear_UI </button>
+
+      <button onClick={() => setView && setView(null)} style={{ marginTop: 8, padding: "6px 10px", borderRadius: 6, background: "#dc3545", color: "white", border: "none", cursor: "pointer" }}>
+        Clear UI
+      </button>
     </div>
   );
-}
-
-
-function next_process_after_receiving_response(data_k)
-{
-  const {action} = data_k;
-
-  if(action === "append_UI")
-  {
-    append_UI(data_k);
-  }
-  else if(action === "modify_UI")
-  {
-    modify_UI(data_k);
-  }
-}
-
-function append_UI(data_k){
-  const newFunction = new Function(data_k.UI_design)
-  const data = data_k.data
-  console.log("Data look : " , data);
-  newFunction(data_k);
-}
-
-function modify_UI(data_k){
-
-}
-
-function clear_UI()
-{
-
 }
