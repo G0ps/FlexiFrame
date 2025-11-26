@@ -12,29 +12,24 @@ env["PYTHONPATH"] = os.path.abspath(os.path.dirname(__file__))
 python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"
 
 services = [
-    {"name": "controller", "file": "services/controller/service.py", "port": "1000"},
-    {"name": "mcp", "file": "services/mcp/service.py", "port": "1003"},
-    {"name": "uiGenerator", "file": "services/uiGenerator/service.py", "port": "2000"}
+    {"name": "controller", "file": "services/controller/service.py", "port": f"{os.environ.get("MAIN_SERVICE_PORT")}"},
+    {"name": "mcp", "file": "services/mcp/service.py", "port": f"{os.environ.get("MCP_PORT")}"},
+    {"name": "uiGenerator", "file": "services/uiGenerator/service.py", "port": f"{os.environ.get("UI_GENERATOR")}"},
+    {"name" : "logger" , "file" : "services/logger/logger.py" , "port" : f"{os.environ.get("LOGGER_PORT")}"}
 ]
 
 processes = []
 
-def stream_output(pipe, service_name, pipe_type):
-    print(f"=============== {service_name} ({pipe_type}) ===============")
-    for line in iter(pipe.readline, b''):
-        try:
-            line = line.decode(errors="ignore").rstrip()
-        except Exception:
-            line = str(line)
-        if line:
-            print(line)
-            print(f"=============== END {service_name} ({pipe_type}) ===============")
+def noop_stream(pipe, *_):
+    # Do nothing; placeholder for stdout/stderr
+    for _ in iter(pipe.readline, b''):
+        pass
+
 try:
     for service in services:
         service_file = os.path.abspath(service["file"])
         service_dir = os.path.dirname(service_file)
 
-        print(f"Starting {service['name']} on port {service['port']}...")
         p = subprocess.Popen(
             [python_executable, "-u", service_file, "--port", service["port"]],
             env=env,
@@ -43,8 +38,9 @@ try:
             stderr=subprocess.PIPE
         )
 
-        threading.Thread(target=stream_output, args=(p.stdout, service['name'], 'stdout'), daemon=True).start()
-        threading.Thread(target=stream_output, args=(p.stderr, service['name'], 'stderr'), daemon=True).start()
+        # Start dummy threads to consume stdout/stderr without printing
+        threading.Thread(target=noop_stream, args=(p.stdout,), daemon=True).start()
+        threading.Thread(target=noop_stream, args=(p.stderr,), daemon=True).start()
         processes.append(p)
 
     # Keep the launcher running
@@ -52,6 +48,5 @@ try:
         p.wait()
 
 except KeyboardInterrupt:
-    print("Stopping all services...")
     for p in processes:
         p.terminate()

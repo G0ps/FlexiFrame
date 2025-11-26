@@ -40,4 +40,9 @@ PROMPTS IN CHAT AND OUTPUTS
     "FAILED"
 
     input : Give me 10 posts and two todos , must have gold color premium look and left side the posts should be there and right side todos should be there , for todos use silver lining
+    input : give me 5 boxes , each containing a post and a picture in it, all those small boxes should be enclosed by a big box, that big box should be in dark theme and small boxes should be light theme and have gold finish
+
 ]]]]]]]]]]]]]
+
+
+* converted all protocols to "REST" due to sockets unreliability

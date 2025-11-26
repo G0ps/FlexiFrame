@@ -5,10 +5,7 @@ import ModificationLLM from "./test_uis/modification_llm.js";
 
 function convertToJson(inputString) {
   try {
-    // If the string contains escaped quotes, first fix it
     const cleaned = inputString.trim();
-
-    // Convert to JSON
     const jsonObj = JSON.parse(cleaned);
     return jsonObj;
   } catch (err) {
@@ -18,11 +15,9 @@ function convertToJson(inputString) {
 }
 
 export default function App() {
-
   const [open, setOpen] = useState(false);
 
-  // ⭐ initialJson is now a STATE variable
-  const [initialJson, setInitialJson] = useState(`
+  const [initialJson, setInitialJson] = useState(
   {
     "type": "div",
     "props": { "style": { "padding": "20px", "backgroundColor": "#eee" } },
@@ -30,102 +25,94 @@ export default function App() {
       { "type": "h1", "children": ["Waiting for socket data..."] }
     ]
   }
-  `);
+  );
 
-  // ⭐ testJson starts from initialJson
   const [testJson, setTestJson] = useState(initialJson);
 
-  // SOCKET INSTANCE
-  const [socket, setSocket] = useState(null);
+  // Instead of socket instance
+  const [clientId] = useState(() => crypto.randomUUID());
 
+  // -------------------------------
+  // REST POLLING (replaces WebSocket)
+  // -------------------------------
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:2000/ws/chat");
-    setSocket(ws);
-
-    ws.onopen = () => console.log("WS Connected ✔");
-
-    ws.onmessage = (event) => {
-      try {
-        console.log("Event , ", event)
-        const data = JSON.parse(event.data);
-        console.log("Data : " , data.input)
-        console.log("TYpe of that : " , typeof convertToJson(data.input));
-        if (data.status === "success" && data.input) {
-          console.log("Updating testJson with socket data");
-
-          // 🔥 update dynamic ui
-          setTestJson(data.input);
-        }
-
-      } catch (err) {
-        console.error("WS Parse Error:", err);
-      }
-    };
-
-    ws.onerror = (err) => console.error("WS Error:", err);
-    ws.onclose = () => console.log("WS Closed ❌");
-
-    return () => ws.close();
+    console.log("REST mode initialized ✔ (WebSocket removed)");
   }, []);
 
-  // Send message to socket
-  const sendHello = () => {
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send("give me data of the 10 todos with a minimal");
-      console.log("Sent → hello");
+  // Send message (replacing WebSocket send)
+  const sendHello = async () => {
+    try {
+      const response = await fetch("http://localhost:2000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "give me data of the 10 todos with a minimal",
+          client_id: clientId
+        })
+      });
+
+      const data = await response.json();
+      console.log("REST Response:", data);
+
+      if (data.status === "success" && data.input) {
+        console.log("Updating UI with REST data");
+        setTestJson(data.input);
+      }
+    } catch (err) {
+      console.error("REST Error:", err);
     }
   };
 
   return (
-  <div className="UpperLayer" id="UpperMostDiv">
+    <div className="UpperLayer" id="UpperMostDiv">
 
-    <div className="App">
-      <h1>WebSocket Test App</h1>
+      <div className="App">
+        <h1>REST Test App (WebSocket removed)</h1>
+
+        <button
+          onClick={sendHello}
+          style={{
+            padding: "10px 14px",
+            backgroundColor: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            marginBottom: "20px"
+          }}
+        >
+          Send Hello (REST)
+        </button>
+
+        <TestWebSocket />
+      </div>
+
+      <h1>WELCOME TO AI CHAT</h1>
+
+      {/* 🔥 Pass dynamic JSON to your renderer */}
+      <ModificationLLM inputString={JSON.stringify(testJson)} />
+
+      {/* 🔹 Pass setTestJson as setView */}
+      {open && <ChatBox onClose={() => setOpen(false)} setView={setTestJson} />}
 
       <button
-        onClick={sendHello}
+        onClick={() => setOpen(true)}
         style={{
-          padding: "10px 14px",
-          backgroundColor: "#28a745",
+          position: "fixed",
+          bottom: "20px",
+          right: "20px",
+          padding: "12px 18px",
+          borderRadius: "50%",
+          backgroundColor: "#007bff",
           color: "white",
           border: "none",
-          borderRadius: "8px",
           cursor: "pointer",
-          marginBottom: "20px"
+          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+          fontSize: "16px",
         }}
       >
-        Send Hello to Socket
+        Chat
       </button>
-
-      <TestWebSocket />
     </div>
-
-    <h1>WELCOME TO AI CHAT</h1>
-
-    {/* 🔥 Pass dynamic JSON to your renderer */}
-    <ModificationLLM inputString={JSON.stringify(testJson)} />
-
-    {/* 🔹 Pass setTestJson as setView */}
-    {open && <ChatBox onClose={() => setOpen(false)} setView={setTestJson} />}
-
-    <button
-      onClick={() => setOpen(true)}
-      style={{
-        position: "fixed",
-        bottom: "20px",
-        right: "20px",
-        padding: "12px 18px",
-        borderRadius: "50%",
-        backgroundColor: "#007bff",
-        color: "white",
-        border: "none",
-        cursor: "pointer",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-        fontSize: "16px",
-      }}
-    >
-      Chat
-    </button>
-  </div>
-);
+  );
 }
