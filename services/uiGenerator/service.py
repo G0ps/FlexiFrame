@@ -43,13 +43,17 @@ async def send_to_client(client_id: str, data: dict):
 # ---------------------------
 # Dummy prompt builder (not used)
 # ---------------------------
-def build_prompt(val: str):
-    return val
 
+def build_prompt(val: str):
+    return str
 
 # ---------------------------
 # WebSocket Endpoint
 # ---------------------------
+
+
+from llm_test import GeminiLLM
+llm = GeminiLLM();
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -65,7 +69,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # Get prompt (unused)
             prompt = build_prompt(user_input)
-
+            llm.send_llm()
             # SEND UI JSON TO FRONTEND
             await send_to_client(client_id, {
                 "status": "success",
