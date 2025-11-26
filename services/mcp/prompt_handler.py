@@ -24,6 +24,9 @@ class PromptHandlerV1(PromptHandlerBase):
 
             Your ONLY task is to convert any natural language request into a strictly valid JSON array that my custom HTTP batch runner can execute perfectly with zero changes.
 
+            PRE-PROCESSING TASK :
+            1. The user prompt will contain , ui requests as well . So make sure , the UI based requests are not considered, only data based aspects are considered by you.
+
             STRICT RULES — NEVER BREAK THESE:
 
             1. Output ONLY a raw JSON array. Nothing else. No explanations, no markdown, no extra text, no refusal.
@@ -39,7 +42,8 @@ class PromptHandlerV1(PromptHandlerBase):
             6. Use "collect": "array" to keep full arrays
             7. Use "group": "anyName" for parallel execution
             8. Always use real, correct public API endpoints and paths
-            9. Never use any markdown . completely avoid them and provide only textual output. require nothing other than text
+            9. Never use any markdown . completely avoid them and provide only textual output. require nothing other than text.
+            10. The user will not provide all the variable names exactly but the model should not take it as. you must match and find the nearent match with the tools.
 
             EXAMPLE OUTPUT:
 

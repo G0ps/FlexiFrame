@@ -40,8 +40,8 @@ async def handle_prompt(payload: dict):
     result = handler.run(prompt)
     result_str = json.dumps(result, indent=4)
     response_text = llm.send_llm(result_str)
-    # print("Response you got : ")
-    # print( response_text )
+    print("Response you got : ")
+    print( response_text )
 
     # print("Sabari's code response : ")
     datat_sab = get_val(json.loads(response_text) , fetch = True);
