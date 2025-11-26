@@ -1,4 +1,13 @@
+<<<<<<< HEAD
 import React, { useState, useRef, useEffect, useCallback } from "react";
+=======
+<<<<<<< HEAD
+import React, { useState, useRef } from "react";
+import './style.css';
+=======
+import { useState, useRef, useEffect } from "react";
+>>>>>>> origin/gopinath
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
 
 export default function ChatBox({ onClose }) {
   const [messages, setMessages] = useState([
@@ -32,6 +41,22 @@ export default function ChatBox({ onClose }) {
     const ws = new WebSocket("ws://localhost:1000/ws/chat");
     wsRef.current = ws;
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    try {
+      const resp = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages }),
+      });
+      const data = await resp.json();
+      const assistantReply = data.reply || "No reply";
+      setMessages((m) => [...m, { role: "assistant", content: assistantReply }] );
+
+      // scroll to bottom after new message
+=======
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
     ws.onopen = () => {
       console.log("WebSocket connected");
     };
@@ -75,6 +100,18 @@ export default function ChatBox({ onClose }) {
       }
 
       setLoading(false);
+<<<<<<< HEAD
+=======
+
+
+      next_process_after_receiving_response(event.data);
+
+      // Scroll to bottom
+>>>>>>> origin/gopinath
+      setTimeout(() => {
+        bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
+      }, 50);
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
     };
 
     ws.onclose = () => console.log("WebSocket closed");
@@ -164,6 +201,13 @@ export default function ChatBox({ onClose }) {
   };
 
   return (
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    <div className="chatbox-container">
+      <div className="chatbox-header">
+=======
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
     <div
       style={{
         position: "fixed",
@@ -181,6 +225,7 @@ export default function ChatBox({ onClose }) {
         zIndex: 9999,
       }}
     >
+<<<<<<< HEAD
       {/* Header */}
       <div
         style={{
@@ -226,6 +271,25 @@ export default function ChatBox({ onClose }) {
               textAlign: m.role === "user" ? "right" : "left",
             }}
           >
+=======
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 }}>
+>>>>>>> origin/gopinath
+        <strong>AI Chat</strong>
+        <button className="chatbox-close" onClick={onClose}>X</button>
+      </div>
+
+<<<<<<< HEAD
+      <div className="chatbox-body" ref={bodyRef}>
+        {messages.map((m, i) => (
+          <div key={i} className="message-wrap">
+            <div className="message-role">{m.role}</div>
+            <div className={`message ${m.role === 'assistant' ? 'assistant' : 'user'}`}>
+=======
+      <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f8f8f8", borderRadius: 6 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: "#666" }}>{m.role}</div>
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
             <div
               style={{
                 display: "inline-block",
@@ -238,6 +302,10 @@ export default function ChatBox({ onClose }) {
                 borderBottomLeftRadius: m.role === "user" ? "18px" : "4px",
               }}
             >
+<<<<<<< HEAD
+=======
+>>>>>>> origin/gopinath
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
               {m.content}
             </div>
           </div>
@@ -259,6 +327,7 @@ export default function ChatBox({ onClose }) {
         )}
       </div>
 
+<<<<<<< HEAD
       {/* Input */}
       <div
         style={{
@@ -318,9 +387,39 @@ export default function ChatBox({ onClose }) {
             Clear Generated UI
           </button>
         </div>
+=======
+<<<<<<< HEAD
+      <div className="chatbox-input">
+=======
+      <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+>>>>>>> origin/gopinath
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Type message..."
+          className="chat-input"
+        />
+<<<<<<< HEAD
+        <button className="send-btn" onClick={sendMessage} disabled={loading}>
+          {loading ? 'Sending...' : 'Send'}
+=======
+        <button
+          onClick={sendMessage}
+          style={{ padding: "8px 12px", borderRadius: 6, background: "#007bff", color: "white", border: "none" }}
+        >
+          Send
+>>>>>>> origin/gopinath
+        </button>
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
       </div>
     </div>
   );
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
 }
 
 
@@ -330,3 +429,8 @@ export default function ChatBox({ onClose }) {
 
 
 
+<<<<<<< HEAD
+=======
+>>>>>>> origin/gopinath
+}
+>>>>>>> cf3442b8d7b51b5b393a577162413a280eb1af3c
