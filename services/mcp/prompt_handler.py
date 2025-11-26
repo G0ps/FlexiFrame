@@ -18,52 +18,56 @@ class PromptHandlerBase(ABC):
 class PromptHandlerV1(PromptHandlerBase):
     def process(self, prompt: str) -> dict:
         tool_details = load_tool_details()
-        processed = f"""V1 processed: 
-            You are an AI agent responsible for computing the correct tool-usage execution order based on two inputs:
-            1.The available Tool Details "TOOL DETAILS"
-            2.The User Prompt "USER PROMPT"
-            Your output must be a STRICT JSON object that follows the exact structure defined in the STRICT OUTPUT SECTION.
-            Your task is to analyze the user's request, determine which tools should be used, in what order, and with what parameters, and generate the required structured plan.
 
-            Always prioritize the user's stated intent when determining tool-usage ordering.
-            Do not include explanations, comments, or additional text. Produce only the JSON object that represents the final sequence of server actions.
+        processed = f"""V1 processed:
+            You are an expert API orchestration engineer.
 
-        EXAMPLE INPUT STRUCTURE
-        [
-            {{
-                "id": "todo",
-                "method": "GET",
-                "endpoint": "https://jsonplaceholder.typicode.com",
-                "url_ext": "/todos/3",
-                "outputAs": "output1"
-            }},
+            Your ONLY task is to convert any natural language request into a strictly valid JSON array that my custom HTTP batch runner can execute perfectly with zero changes.
+
+            STRICT RULES — NEVER BREAK THESE:
+
+            1. Output ONLY a raw JSON array. Nothing else. No explanations, no markdown, no extra text, no refusal.
+            2. Every object = one HTTP request.
+            3. Required fields:
+            * "id" → unique short lowercase string (e.g. "post4", "user", "albums", "photos1")
+            * "method" → "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+            * "endpoint" → full base URL (e.g. "https://jsonplaceholder.typicode.com")
+            * "url_ext" → path after base (e.g. "/posts/4")
+            * "outputAs" → where result goes (e.g. "data.post", "user.albums", "results.chain1")
+            4. Use templating: {{steps.<id>.<path>}} → e.g. {{steps.post.userId}}
+            5. Use "extract": {{ "key": "json.path" }} when needed
+            6. Use "collect": "array" to keep full arrays
+            7. Use "group": "anyName" for parallel execution
+            8. Always use real, correct public API endpoints and paths
+            9. Never use any markdown . completely avoid them and provide only textual output. require nothing other than text
+
+            EXAMPLE OUTPUT:
+
+            [
             {{
                 "id": "post",
-                "group": "g1",
                 "method": "GET",
                 "endpoint": "https://jsonplaceholder.typicode.com",
                 "url_ext": "/posts/4",
-                "extract": {{
-                "postId": "id"
-                }},
-                "outputAs": "output2.chain1"
+                "extract": {{ "userId": "userId" }},
+                "outputAs": "data.post"
             }},
             {{
-                "id": "photos",
-                "group": "g1",
+                "id": "albums",
                 "method": "GET",
                 "endpoint": "https://jsonplaceholder.typicode.com",
-                "url_ext": "/albums/1/photos",
+                "url_ext": "/albums?userId={{steps.post.userId}}",
                 "collect": "array",
-                "outputAs": "output2.chain2"
+                "outputAs": "data.albums"
             }}
             ]
-            
-        USER PROMPT : 
-        {prompt}
-        TOOL DETAILS:
-        {json.dumps(tool_details)}
-        """
+
+            Now convert the user's request into exactly this format.
+            USER PROMPT:
+            {prompt}
+            TOOL DETAILS:
+            {json.dumps(tool_details)}
+            """
         return {
             "version": "v1",
             "output": processed
@@ -81,7 +85,6 @@ class PromptHandler:
     def _factory(self, version: str) -> PromptHandlerBase:
         if version == "v1":
             return PromptHandlerV1()
-
         # default fallback
         return PromptHandlerV1()
 

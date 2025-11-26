@@ -28,3 +28,4 @@ input -> llm (it samples input and builds a function that takes "actual input" a
 WEDNESDAY
 
 * Decided to make the , mcp service "rest"
+* Nivas made the UI structure and working on prompt 
