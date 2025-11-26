@@ -10,6 +10,10 @@ pip install venv myenv
 
 pip install -r requirements.txt
 
+# ollama model pulling , manditory
+
+ollama pull deepseek-r1:1.5b
+
 # installing requirements for the project
 
 # on launchApp.py change the `python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"` with your proper directory's "myenv/Scripts/python.exe"
@@ -23,3 +27,8 @@ python launchApp.py
 ======================= script ==========================
 
 ======================================================================================
+
+
+Initially configured , gemini api and it seems it is not viable , so i decided to go with 
+
+olama 

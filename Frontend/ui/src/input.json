@@ -1,0 +1,5 @@
+[
+{"id": "posts", "method": "GET", "endpoint": "https://jsonplaceholder.typicode.com", "url_ext": "/posts", "collect": "array", "outputAs": "data.posts", "group": "initialfetch"},
+{"id": "albums", "method": "GET", "endpoint": "https://jsonplaceholder.typicode.com", "url_ext": "/albums", "collect": "array", "outputAs": "data.albums", "group": "initialfetch"},
+{"id": "users", "method": "GET", "endpoint": "https://jsonplaceholder.typicode.com", "url_ext": "/users", "collect": "array", "outputAs": "data.users", "group": "initialfetch"}
+]

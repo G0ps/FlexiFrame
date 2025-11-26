@@ -1,11 +1,16 @@
 import { useState } from "react";
 import ChatBox from "./Chatbot.js";
+import TestWebSocket from "./test_uis/modification_llm.js";
 
 export default function App() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div>
+    <div className="UpperLayer" id="UpperMostDiv">
+      <div className="App">
+        <h1>WebSocket Test App</h1>
+        <TestWebSocket />
+      </div>
       <h1>WELCOME TO AI CHAT</h1>
 
       {open && <ChatBox onClose={() => setOpen(false)} />}
