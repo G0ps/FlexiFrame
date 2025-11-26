@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const uiString = `{
-  "type": "div",
+  "type": "p",
   "props": { "style": { "padding": "20px", "backgroundColor": "#eee" } },
   "children": [
     { "type": "h1", "children": ["Hello World"] },
