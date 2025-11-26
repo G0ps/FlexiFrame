@@ -11,7 +11,7 @@ export default function ChatBox({ onClose }) {
 
   // Initialize WebSocket
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:2000/ws/chat");
+    const ws = new WebSocket("ws://localhost:1000/ws/chat");
     wsRef.current = ws;
 
     ws.onopen = () => {
