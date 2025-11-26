@@ -9,3 +9,23 @@ launchApp.py
     INSTRUCTION : 
     * all the packages relevant to the services must be in the main directory
 ]
+
+
+changed from olama to , gemini back
+
+Decide to work on react based , string to react component building
+
+Future enhancements , make the React UI open for modification. Now its is not beign possible
+to give codes on string , that can run loops so that the input is being manditory to maped using llm
+
+to avoid that , need to figure out a sollution 
+
+input -> llm (it samples input and builds a function that takes "actual input" as parameter) -> string -> json -> react_component
+
+
+
+26/11/2025
+WEDNESDAY
+
+* Decided to make the , mcp service "rest"
+* Nivas made the UI structure and working on prompt 

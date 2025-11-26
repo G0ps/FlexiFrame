@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function ChatBox({ onClose }) {
   const [messages, setMessages] = useState([
@@ -7,33 +7,51 @@ export default function ChatBox({ onClose }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bodyRef = useRef();
+  const wsRef = useRef(null);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg = { role: "user", content: input };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput("");
-    setLoading(true);
+  // Initialize WebSocket
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:1000/ws/chat");
+    wsRef.current = ws;
 
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
-      });
-      const data = await resp.json();
-      const assistantReply = data.reply || "No reply";
-      setMessages((m) => [...m, { role: "assistant", content: assistantReply }]);
-     
+    ws.onopen = () => {
+      console.log("Connected to server");
+      ws.send("Hello server!");
+    };
+
+    ws.onmessage = (event) => {
+      console.log("Received:", event.data);
+      setMessages((m) => [...m, { role: "assistant", content: event.data }]);
+      setLoading(false);
+
+
+      next_process_after_receiving_response(event.data);
+
+      // Scroll to bottom
       setTimeout(() => {
         bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
       }, 50);
-    } catch (err) {
-      setMessages((m) => [...m, { role: "assistant", content: "Error: " + err.message }]);
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    ws.onclose = () => console.log("WebSocket closed");
+    ws.onerror = (err) => console.error("WebSocket error:", err);
+
+    return () => {
+      ws.close();
+    };
+
+  }, []);
+
+  const sendMessage = () => {
+    if (!input.trim() || !wsRef.current) return;
+
+    const userMsg = { role: "user", content: input };
+    setMessages((m) => [...m, userMsg]);
+    setInput("");
+    setLoading(true);
+
+    // Send via WebSocket
+    wsRef.current.send(input);
   };
 
   const onKeyDown = (e) => {
@@ -60,18 +78,25 @@ export default function ChatBox({ onClose }) {
         zIndex: 9999,
       }}
     >
-       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 }}>
         <strong>AI Chat</strong>
         <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer" }}>
           X
         </button>
       </div>
 
-       <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f8f8f8", borderRadius: 6 }}>
+      <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: "8px", background: "#f8f8f8", borderRadius: 6 }}>
         {messages.map((m, i) => (
           <div key={i} style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: "#666" }}>{m.role}</div>
-            <div style={{ whiteSpace: "pre-wrap", background: m.role === "assistant" ? "#fff" : "#e6f0ff", padding: 8, borderRadius: 6 }}>
+            <div
+              style={{
+                whiteSpace: "pre-wrap",
+                background: m.role === "assistant" ? "#fff" : "#e6f0ff",
+                padding: 8,
+                borderRadius: 6,
+              }}
+            >
               {m.content}
             </div>
           </div>
@@ -79,7 +104,7 @@ export default function ChatBox({ onClose }) {
         {loading && <div style={{ fontStyle: "italic", fontSize: 13 }}>Assistant is typing...</div>}
       </div>
 
-       <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+      <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -87,10 +112,45 @@ export default function ChatBox({ onClose }) {
           placeholder="Type message..."
           style={{ flex: 1, padding: 8, borderRadius: 6, resize: "none", height: 50 }}
         />
-        <button onClick={sendMessage} style={{ padding: "8px 12px", borderRadius: 6, background: "#007bff", color: "white", border: "none" }}>
+        <button
+          onClick={sendMessage}
+          style={{ padding: "8px 12px", borderRadius: 6, background: "#007bff", color: "white", border: "none" }}
+        >
           Send
         </button>
       </div>
+      <button onClick={() => {clear_UI()}}> clear_UI </button>
     </div>
   );
+}
+
+
+function next_process_after_receiving_response(data_k)
+{
+  const {action} = data_k;
+
+  if(action === "append_UI")
+  {
+    append_UI(data_k);
+  }
+  else if(action === "modify_UI")
+  {
+    modify_UI(data_k);
+  }
+}
+
+function append_UI(data_k){
+  const newFunction = new Function(data_k.UI_design)
+  const data = data_k.data
+  console.log("Data look : " , data);
+  newFunction(data_k);
+}
+
+function modify_UI(data_k){
+
+}
+
+function clear_UI()
+{
+
 }
