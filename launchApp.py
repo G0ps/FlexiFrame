@@ -9,7 +9,7 @@ load_dotenv()
 env = os.environ.copy()
 env["PYTHONPATH"] = os.path.abspath(os.path.dirname(__file__))
 
-python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"
+python_executable = r"D:\FlexiFrame\myenv\Scripts\python.exe"
 
 services = [
     {"name": "service_llm", "file": "services/controller/service.py", "port": "1000"}
