@@ -26,11 +26,37 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     client_id = str(uuid.uuid4())
     connected_clients[client_id] = websocket
+
+    print(f"Client connected: {client_id}")
+
     try:
         while True:
-            await websocket.receive_text()  # keep alive
+            raw = await websocket.receive_text()
+
+            print("\n📥 Received from client:", raw)
+
+            # try to parse message as JSON
+            try:
+                data = json.loads(raw)
+                message = data.get("message", raw)
+                log_type = data.get("type", "data")
+                port = data.get("port", "unknown")
+            except:
+                # plain text fallback
+                message = raw
+                log_type = "data"
+                port = "unknown"
+
+            # Call LoggerManager
+            if log_type == "error":
+                await logger_manager.log_error(message, port)
+            else:
+                await logger_manager.log_data(message, port)
+
     except WebSocketDisconnect:
+        print(f"Client disconnected: {client_id}")
         connected_clients.pop(client_id, None)
+
 
 # -----------------------------
 # Broadcast to all connected clients
@@ -66,6 +92,8 @@ class TerminalLogger(LoggerInterface):
             "port": service_port,
             "message": message
         }
+        print("Logg_received : \n")
+        print(message)
         await broadcast(payload)
 
     async def log_data(self, message: str, service_port: str):
@@ -74,6 +102,8 @@ class TerminalLogger(LoggerInterface):
             "port": service_port,
             "message": message
         }
+        print("error_received : \n")
+        print(message)
         await broadcast(payload)
 
 
@@ -87,6 +117,8 @@ class UILogger(LoggerInterface):
             "port": service_port,
             "message": message
         }
+        print("Logg_received : \n")
+        print(message)
         await broadcast(payload)
 
     async def log_data(self, message: str, service_port: str):
@@ -95,6 +127,8 @@ class UILogger(LoggerInterface):
             "port": service_port,
             "message": message
         }
+        print("error_received : \n")
+        print(message)
         await broadcast(payload)
 
 
@@ -123,3 +157,8 @@ logger_manager = LoggerManager()
 def start_logger_service(port: int = 4000):
     import uvicorn
     uvicorn.run("logger:app", host="0.0.0.0", port=port, reload=False)
+
+
+if __name__ == "__main__":
+    print("Starting LoggerService on port 4000...")
+    start_logger_service(4000)
