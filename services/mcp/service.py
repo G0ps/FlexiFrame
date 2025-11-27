@@ -16,7 +16,7 @@ logger_lock = asyncio.Lock()  # to prevent duplicate connects
 async def connect_logger():
     """
     Connect once and store the websocket globally.
-    Safe to call multiple times (locks prevent duplicate connections).
+    Safe to call multiple times (locks prevent duplicate connections).it 
     """
     global logger_socket
 
