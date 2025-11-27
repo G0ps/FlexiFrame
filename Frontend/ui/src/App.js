@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ChatBox from "./Chatbot.js";
-import TestWebSocket from "./test_uis/modification_llm.js";
-import ModificationLLM from "./test_uis/modification_llm.js";
+import TestWebSocket from "./UiBuilder/Ui_Builder.js";
+import ModificationLLM from "./UiBuilder/Ui_Builder.js";
 
 function convertToJson(inputString) {
   try {

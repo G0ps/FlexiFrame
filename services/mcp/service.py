@@ -1,12 +1,53 @@
 # services/AExampleService/service.py
-from fastapi import FastAPI
+from fastapi import FastAPI,WebSocket, WebSocketDisconnect
 import sys
 import os
+import asyncio
+import websockets
 from dotenv import load_dotenv
 import json
 from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
+# ====================================================LOGGER==========================================================
+logger_socket = None
+logger_lock = asyncio.Lock()  # to prevent duplicate connects
+
+async def connect_logger():
+    """
+    Connect once and store the websocket globally.
+    Safe to call multiple times (locks prevent duplicate connections).
+    """
+    global logger_socket
+
+    async with logger_lock:
+        if logger_socket is not None:
+            return logger_socket
+
+        LOGGER_PORT = os.environ.get("LOGGER_PORT", "4000")
+        uri = f"ws://localhost:{LOGGER_PORT}/ws/logger"
+
+        logger_socket = await websockets.connect(uri)
+        await logger_socket.send("MCP SERVER CONNECTED")
+    return logger_socket
+
+
+async def log(message: str):
+    """Send a message using the global logger."""
+    global logger_socket
+
+    if logger_socket is None:
+        print("Logger did not confugured...")
+        await connect_logger()   # auto-connect if not already connected
+
+    try:
+        logger_socket.send(message)
+    except:
+        # try reconnecting once
+        print("Error while logging....")
+
+
+# ====================================================LOGGER==========================================================
 
 # Ensure current folder is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -39,6 +80,7 @@ async def handle_prompt(payload: dict):
 
     print("Payload received on mcp from ui Gen")
     print(payload)
+    log(f"payload from mcp : " , json.dumps(payload))
     prompt = payload.get("prompt")
     version = payload.get("version", "v1")
 

@@ -11,11 +11,13 @@ env["PYTHONPATH"] = os.path.abspath(os.path.dirname(__file__))
 
 python_executable = r"D:\Projects\Dynamic-Ui\myenv\Scripts\python.exe"
 
+MAIN_SERVICE_PORT = os.environ.get("MAIN_SERVICE_PORT")
+MCP_PORT = os.environ.get("MCP_PORT")
+UI_GENERATOR = os.environ.get("UI_GENERATOR")
 services = [
-    {"name": "controller", "file": "services/controller/service.py", "port": f"{os.environ.get("MAIN_SERVICE_PORT")}"},
-    {"name": "mcp", "file": "services/mcp/service.py", "port": f"{os.environ.get("MCP_PORT")}"},
-    {"name": "uiGenerator", "file": "services/uiGenerator/service.py", "port": f"{os.environ.get("UI_GENERATOR")}"},
-    {"name" : "logger" , "file" : "services/logger/logger.py" , "port" : f"{os.environ.get("LOGGER_PORT")}"}
+    {"name": "controller", "file": "services/controller/service.py", "port": f"{MAIN_SERVICE_PORT}"},
+    {"name": "mcp", "file": "services/mcp/service.py", "port": f"{MCP_PORT}"},
+    {"name": "uiGenerator", "file": "services/uiGenerator/service.py", "port": f"{UI_GENERATOR}"}
 ]
 
 processes = []
