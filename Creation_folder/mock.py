@@ -41,7 +41,7 @@ def log_response(response):
 # LLM CALLING SERVICE
 
 from llm_service import GeminiService
-API_KEY = "AIzaSyDDmqWjbJjZG-7_t2Kv01vxeRUXchfoVrc"
+API_KEY = "<GIVE YOUR GEMINI KEY HERE>"
 llm_service = GeminiService(api_key=API_KEY)
 print("llm Service initialized.")
 
