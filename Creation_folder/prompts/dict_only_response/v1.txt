@@ -1,0 +1,70 @@
+USER REQUEST : "give me a very cute Hello world , and green background"
+======================================================
++++++++++++++++++++++++++++++++++++++++
+JSON OBJECT ONLY RESPONSE (STRICT)
+THE RESPONSE MUST BE A SINGLE, VALID JSON OBJECT (DICT) STRING.
+NEVER USE (```json ```) OR (```python ```) ENCLOSURES.
+MUST AVOID EMOJIS AND ONLY CHARACTERS.
+====================================
+STRICT ESCAPING RULE: The output must be valid JSON.
+1. All string values must use **double quotes (")** for enclosure and must escape internal double quotes as **\"**.
+2. For internal HTML attributes within the JavaScript 'logic' field, **always use single quotes (')** (e.g., `<span class='cute'>`) to avoid conflicting with the outer JSON escaping.
+3. All literal backslashes (\) in any string value must be escaped as **\\\\** to ensure the string remains valid after being loaded by Python's `json.loads()` from a raw string literal.
+====================================
+Under no circumstances should you include text, explanations, or code blocks outside the final JSON object. Your entire output must be a single, valid JSON object string.
+=================================================================
+GUIDELINES (JSON FORMAT):
+1. Output must always be a JSON object (dict) only.
+2. Keys must be strings enclosed in double quotes (").
+3. String values must be enclosed in double quotes (").
+4. Boolean values must be `true` or `false` (lowercase, no quotes).
+5. Null values must be `null` (lowercase, no quotes).
+6. Lists and nested objects must follow proper JSON syntax. No trailing commas.
+7. If the task requires returning an error, include an object with the key `"error"` and a descriptive message.
+==================================================================
+EXAMPLES: (Convert Python examples to strict JSON syntax)
+
+1. UI Example (JSON):
+{
+    "schema": "ui_dict_v1",
+    "meta": {
+        "title": "Login Form",
+        "description": "A simple login form with username and password fields."
+    },
+    "components": [
+        {
+            "type": "input",
+            "id": "username_field",
+            "props": { "placeholder": "Username", "type": "text" },
+            "children": []
+        },
+        {
+            "type": "input",
+            "id": "password_field",
+            "props": { "placeholder": "Password", "type": "password" },
+            "children": []
+        },
+        {
+            "type": "button",
+            "id": "submit_button",
+            "props": { "text": "Login", "action": "submit_form" },
+            "children": []
+        }
+    ]
+}
+==================================================================
+2. Data Example (JSON):
+{
+    "status": "success",
+    "data": { "user_id": 12345, "username": "johndoe" },
+    "meta": { "source": "user_db", "timestamp": "2025-11-28T10:00:00Z" }
+}
+==================================================================
+
+ADDITIONAL INSTRUCTIONS:
+- Always validate JSON format before returning.
+- Never return plain text, markdown, or commentary outside the object.
+- Always include all required fields in your response as per schema.
+- If any field is optional, it may be omitted, but the JSON object must remain valid.
+- Use nested structures only when required.
++++++++++++++++++++++++++++++++++++++++

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Schema Driven UI</title>
+
+  <style id="dynamic-style">
+    /* Dynamic CSS will be injected here */
+  </style>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+    }
+    #app {
+      margin: auto;
+      width: 400px;
+    }
+  </style>
+</head>
+
+<body>
+<div id="app">
+  <div id="dynamic-ui"></div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   GLOBAL FUNCTION REGISTRY
+   Functions compiled from schema are stored here as REAL JS functions
+============================================================ */
+const FUNCTIONS_SET = Object.create(null);
+
+
+
+/* ============================================================
+   GENERIC HTTP UTILITY LAYER
+   All UI functions can use these for server calls
+============================================================ */
+
+async function doGet(endpoint, headers = {}) {
+  const finalHeaders = Object.assign({
+    "Accept": "application/json"
+  }, headers);
+
+  const res = await fetch(endpoint, {
+    method: "GET",
+    headers: finalHeaders
+  });
+
+  return res.json();
+}
+
+async function doPost(endpoint, body, headers = {}) {
+  const finalHeaders = Object.assign({
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  }, headers);
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: finalHeaders,
+    body: JSON.stringify(body)
+  });
+
+  return res.json();
+}
+
+async function doPut(endpoint, body, headers = {}) {
+  const finalHeaders = Object.assign({
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  }, headers);
+
+  const res = await fetch(endpoint, {
+    method: "PUT",
+    headers: finalHeaders,
+    body: JSON.stringify(body)
+  });
+
+  return res.json();
+}
+
+async function doPatch(endpoint, body, headers = {}) {
+  const finalHeaders = Object.assign({
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  }, headers);
+
+  const res = await fetch(endpoint, {
+    method: "PATCH",
+    headers: finalHeaders,
+    body: JSON.stringify(body)
+  });
+
+  return res.json();
+}
+
+async function doDelete(endpoint, headers = {}) {
+  const finalHeaders = Object.assign({
+    "Accept": "application/json"
+  }, headers);
+
+  const res = await fetch(endpoint, {
+    method: "DELETE",
+    headers: finalHeaders
+  });
+
+  return res.json();
+}
+
+
+
+/* ============================================================
+   CORE SCHEMA INTERPRETER
+============================================================ */
+
+/* 1. Load CSS rules */
+function renderCSS(cssArray) {
+  const styleTag = document.getElementById("dynamic-style");
+  let cssText = "";
+
+  for (const block of cssArray) {
+    cssText += `${block.selector} { ${block.rules} }\n`;
+  }
+  styleTag.textContent = cssText;
+}
+
+
+/* 2. Compile and register functions */
+function compileFunctions(functionsArray) {
+
+  functionsArray.forEach(f => {
+    const paramNames = f.params.map(p => p.name);
+
+    const wrappedLogic = `"use strict";\n${f.logic}`;
+
+    const compiledFn = new Function(...paramNames, wrappedLogic);
+
+    FUNCTIONS_SET[f.function_id] = compiledFn;
+  });
+}
+
+
+/* 3. Render elements recursively */
+function createElement(node) {
+  const el = document.createElement(node.type);
+
+  if (node.id) el.id = node.id;
+  if (node.class) el.className = node.class;
+  if (node.text) el.textContent = node.text;
+
+  if (node.attributes) {
+    Object.entries(node.attributes).forEach(([k,v]) => {
+      el.setAttribute(k, v);
+    });
+  }
+
+  /* EVENT BINDING */
+  if (node.events) {
+    node.events.forEach(eventObj => {
+      el.addEventListener(eventObj.event, () => {
+
+        const fn = FUNCTIONS_SET[eventObj.function_id];
+        if (!fn) {
+          console.error("Function not found:", eventObj.function_id);
+          return;
+        }
+
+        /* Extract params */
+        const extracted = [];
+        if (eventObj.params) {
+          for (const p of eventObj.params) {
+            let val;
+
+            if (p.from === "element") {
+              const ref = document.getElementById(p.id);
+              if (!ref) continue;
+
+              if (p.extract === "value") {
+                val = ref.value;
+              } else if (p.extract === "text") {
+                val = ref.textContent;
+              }
+
+              val = castType(val, p.type);
+            }
+
+            extracted.push(val);
+          }
+        }
+
+        fn(...extracted);
+      });
+    });
+  }
+
+  /* RECURSE CHILDREN */
+  if (node.children) {
+    node.children.forEach(child => {
+      el.appendChild(createElement(child));
+    });
+  }
+
+  return el;
+}
+
+
+/* 4. Type casting for params */
+function castType(raw, type) {
+  if (type === "number") return Number(raw);
+  if (type === "boolean") return Boolean(raw);
+  if (type === "string") return String(raw);
+  return raw;
+}
+
+
+/* 5. Render full UI */
+function renderUI(schema) {
+  compileFunctions(schema.functions);
+  renderCSS(schema.css);
+
+  const container = document.getElementById("dynamic-ui");
+    container.innerHTML = "";
+
+    schema.elements.forEach(e => {
+    const built = createElement(e);
+    container.appendChild(built);
+    });
+}
+
+
+
+/* ============================================================
+   DEMO LOADED SCHEMA
+   Replace this with dynamic schema from server or WebSocket
+============================================================ */
+const UI_SCHEMA ={
+"functions": [
+{
+"id": "sendComment",
+"name": "sendComment",
+"params": [
+{ "name": "user", "type": "string" },
+{ "name": "comment", "type": "string" }
+],
+"logic": "try {\n const response = await doPost('http://localhost:10000/comments', { user, comment });\n const respDiv = document.getElementById('response');\n respDiv.innerText = JSON.stringify(response, null, 2);\n} catch(err) {\n document.getElementById('response').innerText = 'Error: ' + err.message;\n}"
+}
+],
+"elements": [
+{
+"type": "div",
+"id": "container",
+"children": [
+{
+"type": "label",
+"for": "userInput",
+"innerText": "User:"
+},
+{
+"type": "input",
+"id": "userInput",
+"class": "input-field",
+"attributes": { "placeholder": "Enter user name" }
+},
+{
+"type": "label",
+"for": "commentInput",
+"innerText": "Comment:"
+},
+{
+"type": "textarea",
+"id": "commentInput",
+"class": "input-field",
+"attributes": { "placeholder": "Enter your comment" }
+},
+{
+"type": "button",
+"id": "submitBtn",
+"innerText": "Submit Comment",
+"events": [
+{
+"event": "click",
+"function_id": "sendComment",
+"params": [
+{ "element_id": "userInput", "type": "string", "method": "value" },
+{ "element_id": "commentInput", "type": "string", "method": "value" }
+]
+}
+]
+},
+{
+"type": "div",
+"id": "response",
+"class": "response-box",
+"innerText": "Response will appear here..."
+}
+]
+}
+],
+"css": [
+{
+"selector": ".input-field",
+"rules": "display: block; margin-bottom: 10px; width: 300px; padding: 5px;"
+},
+{
+"selector": "#submitBtn",
+"rules": "padding: 7px 15px; cursor: pointer;"
+},
+{
+"selector": ".response-box",
+"rules": "margin-top: 15px; padding: 10px; background-color: yellow; white-space: pre-wrap;"
+}
+]
+};
+
+
+/* ============================================================
+   INIT
+============================================================ */
+
+renderUI(UI_SCHEMA);
+
+</script>
+</body>
+</html>

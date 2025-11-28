@@ -1,0 +1,35 @@
+-------------------------------------------------------
+VERY STRICT SCHEMA GENERATION RULES
+-------------------------------------------------------
+You are tasked with implementing or generating a schema-driven UI system that is minimal, typed, DOM-first, and fully async-safe. Follow these rules strictly:
+The schema is a JSON object with three top-level keys: functions, elements, and css.
+Functions: Each function must have a unique function_id, an optional name, a params array specifying each parameter with name and type (number, string, boolean, element, object, array), and a logic field containing only the function body. Do not include async function(...){} or full function declarations. The interpreter will wrap the body as an async arrow function. Nested calls are allowed via await ALL_FUNCTIONS'other_function'
+. Typed parameters must be strictly enforced. Async support is handled via the wrapper; await is only valid inside the compiled async function.
+Elements: Declarative DOM nodes include type (div, button, input, p, h1, etc.), optional id, class, text, attributes, children, and events. Events must reference an existing function_id and include a params array specifying source (element, literal, constant, global), element id if applicable, extraction method (value, text), and type. Event handlers are always async, extract and cast parameters, and call await ALL_FUNCTIONSevent.function_id
+.CSS: Each item has a selector and rules. All CSS rules are concatenated and injected at runtime into a style tag.
+Network Helpers: Provide globally async doGet, doPost, doPut, doPatch, and doDelete functions. Schema functions can await these helpers.
+Execution Flow: Load the JSON schema. Compile functions into ALL_FUNCTIONS with async wrappers. Render CSS into a style tag. Recursively render DOM elements. Attach async event handlers. On event, extract and cast values, and await the corresponding function call. Support nested async function calls safely.
+Validation Rules: function_id must be unique. All parameters must have a name and type. Events must reference existing functions. Event param sources can be element, literal, constant, or global. Attributes and CSS selectors must be safe. Limit logic length and avoid unsafe eval-like constructs. Ensure await is only inside async wrappers.
+Security Considerations: Only load trusted schemas. Optional sandboxing via iframe or web worker. Respect CORS for network calls. Validate schema shape, parameter types, and event bindings before compilation.
+Testing and Usage Patterns: Unit tests should validate function compilation and parameter order. Integration tests simulate events and async nested calls. End-to-end tests cover schema to DOM to user interaction to expected changes. Security tests ensure sandboxing or trusted sources.
+Examples: Functions can include parse_num, mul, and calc where calc awaits parse_num for inputs and then mul. Elements include input fields for A and B and a button that triggers calc. Clicking the button triggers the async chain, and typed parameters are respected. CSS can style the button with padding.
+Goal: Ensure all generated schemas and interpreter implementations avoid syntax errors like function statements requiring a name, await only valid in async functions, type mismatches in events, missing function references, and unsafe eval-like logic execution.
+===================================
+EXAMPLE OUTPUT
+{
+  "functions":[
+    { "function_id":"parse_num", "params":[{"name":"x","type":"string"}], "logic":"return Number(x);" },
+    { "function_id":"mul", "params":[{"name":"a","type":"number"},{"name":"b","type":"number"}], "logic":"return a*b;" },
+    { "function_id":"calc", "params":[{"name":"x","type":"string"},{"name":"y","type":"string"}], "logic":"const a=await ALL_FUNCTIONS['parse_num'](x); const b=await ALL_FUNCTIONS['parse_num'](y); return await ALL_FUNCTIONS['mul'](a,b);" }
+  ],
+  "elements":[
+    { "type":"input", "id":"A", "attributes":{"placeholder":"A"} },
+    { "type":"input", "id":"B", "attributes":{"placeholder":"B"} },
+    { "type":"button", "text":"Compute", "events":[{"event":"click","function_id":"calc","params":[
+      {"from":"element","id":"A","extract":"value","type":"string"},
+      {"from":"element","id":"B","extract":"value","type":"string"}
+    ]}]}
+  ],
+  "css":[{"selector":"button","rules":"padding:8px 12px;"}]
+}
+===================================

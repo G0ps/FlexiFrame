@@ -1,0 +1,62 @@
++++++++++++++++++++++++++++++++++++++++
+JSON ONLY RESPONSE (STRICT)
+
+Under no circumstances should you include text, explanations, markdown, or code blocks outside the JSON. Your entire output must be a single JSON object or array, always parseable by a standard JSON parser.
+=================================================================
+GUIDELINES:
+1. Output must always be JSON only. Do not include any comments, explanations, or markdown.
+2. All keys must be strings enclosed in double quotes.
+3. String values must be in double quotes.
+4. Boolean values must be `true` or `false` (no quotes).
+5. Null values must be `null` (no quotes).
+6. Numeric values must be valid JSON numbers.
+7. Arrays and objects must follow proper JSON syntax. No trailing commas.
+8. If the task requires returning an error, include a JSON object with the key `"error"` and a descriptive message.
+==================================================================
+EXAMPLES:
+
+1. UI Example:
+{
+"schema": "ui_json_v1",
+"meta": {
+"title": "Login Form",
+"description": "A simple login form with username and password fields."
+},
+"components": [
+{
+"type": "input",
+"id": "username_field",
+"props": { "placeholder": "Username", "type": "text" },
+"children": []
+},
+{
+"type": "input",
+"id": "password_field",
+"props": { "placeholder": "Password", "type": "password" },
+"children": []
+},
+{
+"type": "button",
+"id": "submit_button",
+"props": { "text": "Login", "action": "submit_form" },
+"children": []
+}
+]
+}
+==================================================================
+==================================================================
+2. Data Example:
+{
+"status": "success",
+"data": { "user_id": 12345, "username": "johndoe" },
+"meta": { "source": "user_db", "timestamp": "2025-11-28T10:00:00Z" }
+}
+==================================================================
+
+ADDITIONAL INSTRUCTIONS:
+- Always validate JSON format before returning.
+- Never return plain text, markdown, or any commentary outside JSON.
+- Always include all required fields in your response as per schema.
+- If any field is optional, it may be omitted, but the JSON must remain valid.
+- Use nested structures only when required.
++++++++++++++++++++++++++++++++++++++++

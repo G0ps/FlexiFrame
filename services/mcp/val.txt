@@ -1,1 +1,0 @@
-```json\n[\n  {\n    \"id\": \"get_all_posts_for_ui\",\n    \"method\": \"GET\",\n    \"endpoint\": \"https://jsonplaceholder.typicode.com\",\n    \"url_ext\": \"/posts\",\n    \"outputAs\": \"data_for_premium_ui\"\n  }\n]\n```

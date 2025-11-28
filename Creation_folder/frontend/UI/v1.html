@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic UI Application</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+  }
+
+  /* Stored Components */
+  #storedComponents {
+    width: 100%;
+    padding: 10px;
+    background: #fff;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #storedComponents h1 {
+    color: red;
+    text-align: center;
+    margin: 0 0 10px 0;
+  }
+
+  .stored-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .stored-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #fafafa;
+  }
+
+  .stored-item button {
+    margin-top: 5px;
+    padding: 5px;
+  }
+
+  /* Dynamic UI */
+  #dynamicUi {
+    margin: 10px;
+    padding: 10px;
+    background: #e9ecef;
+    min-height: 150px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .chat-bubble {
+    padding: 5px 10px;
+    background: #fff;
+    border-radius: 10px;
+    max-width: 80%;
+  }
+
+  /* Prompt Sender */
+  #promptSender {
+    margin: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #promptSender input[type="text"] {
+    flex: 1;
+    padding: 5px;
+  }
+
+  #promptSender button {
+    padding: 5px 10px;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Stored Components -->
+<div id="storedComponents">
+  <h1>DYNAMIC UI APPLICATION</h1>
+  <div class="stored-list" id="storedList"></div>
+</div>
+
+<!-- Dynamic UI -->
+<div id="dynamicUi"></div>
+
+<!-- Prompt Sender -->
+<div id="promptSender">
+  <input type="text" id="chatInput" placeholder="Type a message...">
+  <button onclick="appendDynamicUi()">Send</button>
+  <button onclick="addComponent()">Add Component</button>
+  <button onclick="clearUi()">Clear UI</button>
+</div>
+
+<script>
+  const storedList = document.getElementById('storedList');
+  const dynamicUi = document.getElementById('dynamicUi');
+  const chatInput = document.getElementById('chatInput');
+
+  let storedComponents = [];
+
+  // Append a chat/message to dynamic UI
+  function appendDynamicUi() {
+    const value = chatInput.value.trim();
+    if (!value) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = value;
+    dynamicUi.appendChild(bubble);
+    chatInput.value = '';
+  }
+
+  // Clear dynamic UI
+  function clearUi() {
+    dynamicUi.innerHTML = '';
+  }
+
+  // Add current dynamic UI as a new stored component
+  function addComponent() {
+    const content = dynamicUi.innerHTML;
+    if (!content) return;
+    const component = { id: Date.now(), content };
+    storedComponents.push(component);
+    renderStoredComponents();
+    clearUi();
+  }
+
+  // Render stored components
+  function renderStoredComponents() {
+    storedList.innerHTML = '';
+    storedComponents.forEach(comp => {
+      const div = document.createElement('div');
+      div.className = 'stored-item';
+      div.innerHTML = `
+        <div>ID: ${comp.id}</div>
+        <button onclick="changeDynamicUi(${comp.id})">Preview</button>
+        <button onclick="editComponent(${comp.id})">Edit</button>
+        <button onclick="deleteComponent(${comp.id})">Delete</button>
+      `;
+      storedList.appendChild(div);
+    });
+  }
+
+  // Preview a stored component in Dynamic UI
+  function changeDynamicUi(id) {
+    const comp = storedComponents.find(c => c.id === id);
+    if (comp) dynamicUi.innerHTML = comp.content;
+  }
+
+  // Delete stored component
+  function deleteComponent(id) {
+    storedComponents = storedComponents.filter(c => c.id !== id);
+    renderStoredComponents();
+  }
+
+  // Edit component: load into dynamic UI for modification
+  function editComponent(id) {
+    const comp = storedComponents.find(c => c.id === id);
+    if (comp) {
+      dynamicUi.innerHTML = comp.content;
+      deleteComponent(id); // remove original for update
+    }
+  }
+
+</script>
+
+</body>
+</html>
+
+
+<!-- This version is proper Ui as expected , need css and interpreter , going to add , send to backend functionality first  -->

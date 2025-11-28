@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic UI Application</title>
+<style id="dynamic-style">
+  /* Dynamic CSS from schema will be injected here */
+</style>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5;
+  }
+
+  /* Stored Components */
+  #storedComponents {
+    width: 100%;
+    padding: 15px;
+    background: #fff;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  #storedComponents h1 {
+    color: #d32f2f;
+    text-align: center;
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+  }
+
+  /* RENAMED CSS: stored-list */
+  .slist_xj29aA__991 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* RENAMED CSS: stored-item */
+  .sitem_QQ22_kdi291 {
+    border: 1px solid #ccc;
+    padding: 10px;
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #fafafa;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .sitem_QQ22_kdi291 button {
+    margin-top: 5px;
+    padding: 5px;
+    cursor: pointer;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+
+  .sitem_QQ22_kdi291 button:hover {
+    background: #115293;
+  }
+
+  /* Dynamic UI */
+  #dynamicUi {
+    margin: 10px;
+    padding: 15px;
+    background: #e3f2fd;
+    min-height: 150px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  /* RENAMED CSS: chat-bubble */
+  .cbubble_aa1192_jkK {
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 15px;
+    max-width: 80%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  /* RENAMED CSS: chat-bubble.user */
+  .cbubble_aa1192_jkK.user {
+    align-self: flex-end;
+    background: #1976d2;
+    color: #fff;
+  }
+
+  /* RENAMED CSS: chat-bubble.bot */
+  .cbubble_aa1192_jkK.bot {
+    align-self: flex-start;
+    background: #fff;
+    color: #333;
+  }
+
+  /* Prompt Sender */
+  #promptSender {
+    margin: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #promptSender input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  #promptSender button {
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #388e3c;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+  }
+
+  #promptSender button:hover {
+    background: #2e7d32;
+  }
+</style>
+</head>
+<body>
+
+<div id="storedComponents">
+  <h1>DYNAMIC UI APPLICATION</h1>
+  <div class="stored-list" id="storedList"></div>
+</div>
+
+<div id="dynamicUi"></div>
+
+<div id="promptSender">
+  <input type="text" id="chatInput" placeholder="Type a message...">
+  <button onclick="sendMessage()">Send</button>
+  <button onclick="addComponent()">Add Component</button>
+  <button onclick="clearUi()">Clear UI</button>
+</div>
+
+<script>
+"use strict";
+
+/* ================================
+   GLOBAL FUNCTION REGISTRY
+================================ */
+const FUNCTIONS_SET = Object.create(null);
+
+/* GLOBAL FUNCTION REGISTRY (MAP VERSION) */
+const ALL_FUNCTIONS = Object.create(null);
+
+/* ================================
+   GENERIC HTTP UTILS
+================================ */
+async function doGet(endpoint, headers={}) {
+  const finalHeaders = Object.assign({"Accept":"application/json"}, headers);
+  const res = await fetch(endpoint,{method:"GET", headers: finalHeaders});
+  return res.json();
+}
+async function doPost(endpoint, body, headers={}) {
+  const finalHeaders = Object.assign({"Accept":"application/json","Content-Type":"application/json"}, headers);
+  console.log("Endpoint : " , endpoint);
+  console.log("body : " , body);
+  const res = await fetch(endpoint, { method:"POST", headers: finalHeaders, body: JSON.stringify(body) });
+  return res.json();
+}
+
+/* ================================
+   SCHEMA INTERPRETER
+================================ */
+function renderCSS(cssArray){
+  const styleTag = document.getElementById("dynamic-style");
+  let cssText = "";
+  for(const block of cssArray){
+    cssText += `${block.selector} { ${block.rules} }\n`;
+  }
+  styleTag.textContent = cssText;
+}
+
+function compileFunctions(functionsArray){
+  functionsArray.forEach(f => {
+    const paramNames = f.params.map(p=>p.name);
+    const wrappedLogic = `"use strict"; return (async (${paramNames.join(",")}) => { ${f.logic} })();`;
+    FUNCTIONS_SET[f.id || f.function_id] = (...args)=> new Function(...paramNames, wrappedLogic)(...args);
+  });
+}
+
+function castType(raw, type){
+  if(type==="number") return Number(raw);
+  if(type==="boolean") return Boolean(raw);
+  if(type==="string") return String(raw);
+  return raw;
+}
+
+function createElement(node){
+  const el = document.createElement(node.type);
+  if(node.id) el.id = node.id;
+  if(node.class) el.className = node.class;
+  if(node.text) el.textContent = node.text;
+  if(node.innerText) el.textContent = node.innerText;
+  if(node.attributes) Object.entries(node.attributes).forEach(([k,v])=>el.setAttribute(k,v));
+
+  if(node.events){
+    node.events.forEach(eventObj=>{
+      el.addEventListener(eventObj.event, async ()=>{
+        const fn = FUNCTIONS_SET[eventObj.function_id];
+        if(!fn){ console.error("Function not found:",eventObj.function_id); return; }
+        const extracted = [];
+        if(eventObj.params){
+          for(const p of eventObj.params){
+            let val;
+            if(p.element_id){
+              const ref = document.getElementById(p.element_id);
+              if(!ref) continue;
+              
+              if(p.method==="value") {
+                  val = ref.value;
+              } else if(p.method==="text") {
+                  val = ref.textContent;
+              } else if(p.method==="element" || p.type==="element") {
+                  val = ref;
+              }
+
+              if(p.type !== "element" && val !== ref) {
+                  val = castType(val, p.type);
+              } else if (p.type === "element" && !val) {
+                  val = ref;
+              }
+              
+            } else if(p.literal!==undefined){
+              val = p.literal;
+            }
+            extracted.push(val);
+          }
+        }
+        try { await fn(...extracted); }
+        catch(err){ console.error("Function execution error:",err); }
+      });
+    });
+  }
+
+  if(node.children) node.children.forEach(child => el.appendChild(createElement(child)));
+  return el;
+}
+
+function renderUI(schema){
+  compileFunctions(schema.functions || []);
+  renderCSS(schema.css || []);
+  const container = document.getElementById("dynamicUi");
+  container.innerHTML = "";
+  (schema.elements || []).forEach(e=> container.appendChild(createElement(e)));
+}
+
+/* ================================
+   DYNAMIC UI LOGIC + STORED COMPONENTS
+================================ */
+const storedList = document.getElementById('storedList');
+const dynamicUi = document.getElementById('dynamicUi');
+const chatInput = document.getElementById('chatInput');
+
+let storedComponents = [];
+
+function appendDynamicUi(message, sender='user'){
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${sender}`;
+  bubble.textContent = message;
+  dynamicUi.appendChild(bubble);
+  dynamicUi.scrollTop = dynamicUi.scrollHeight;
+}
+
+function clearUi(){ dynamicUi.innerHTML = ''; }
+
+function addComponent(){
+  const content = dynamicUi.innerHTML;
+  if(!content) return;
+  const component = { id: Date.now(), content };
+  storedComponents.push(component);
+  renderStoredComponents();
+  clearUi();
+}
+
+function renderStoredComponents(){
+  storedList.innerHTML = '';
+  storedComponents.forEach(comp=>{
+    const div = document.createElement('div');
+    div.className='stored-item';
+    div.innerHTML = `
+      <div>ID: ${comp.id}</div>
+      <button onclick="changeDynamicUi(${comp.id})">Preview</button>
+      <button onclick="editComponent(${comp.id})">Edit</button>
+      <button onclick="deleteComponent(${comp.id})">Delete</button>
+    `;
+    storedList.appendChild(div);
+  });
+}
+
+function changeDynamicUi(id){
+  const comp = storedComponents.find(c=>c.id===id);
+  if(comp) dynamicUi.innerHTML = comp.content;
+}
+
+function deleteComponent(id){
+  storedComponents = storedComponents.filter(c=>c.id!==id);
+  renderStoredComponents();
+}
+
+function editComponent(id){
+  const comp = storedComponents.find(c=>c.id===id);
+  if(comp){
+    dynamicUi.innerHTML = comp.content;
+    deleteComponent(id);
+  }
+}
+
+/* ================================
+   SEND MESSAGE + PARSE SCHEMA RESPONSE
+================================ */
+async function sendMessage(){
+  const message = chatInput.value.trim();
+  if(!message) return;
+  appendDynamicUi(message, 'user');
+  chatInput.value='';
+
+  try{
+    const response = await fetch('http://localhost:8000/prompt',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({prompt: message})
+    });
+    if(!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+
+    // Try parsing schema from data.data
+    let schema;
+    try{ schema = JSON.parse(data.data); console.log("schema:", schema) } catch(e){ schema=null; }
+
+    if(schema && schema.elements){
+      renderUI(schema);
+      appendDynamicUi("Rendered schema UI below:", 'bot');
+    } else {
+      const reply = data.data || 'No response from server.';
+      appendDynamicUi(reply, 'bot');
+    }
+
+  }catch(err){
+    appendDynamicUi('Error connecting to backend.', 'bot');
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
+
+
+<!-- gemini gave a update -->

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic UI Application</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f0f2f5;
+  }
+
+  /* Stored Components */
+  #storedComponents {
+    width: 100%;
+    padding: 15px;
+    background: #fff;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  #storedComponents h1 {
+    color: #d32f2f;
+    text-align: center;
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+  }
+
+  .stored-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .stored-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    flex: 0 0 30%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: #fafafa;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .stored-item button {
+    margin-top: 5px;
+    padding: 5px;
+    cursor: pointer;
+    background: #1976d2;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+  }
+
+  .stored-item button:hover {
+    background: #115293;
+  }
+
+  /* Dynamic UI */
+  #dynamicUi {
+    margin: 10px;
+    padding: 15px;
+    background: #e3f2fd;
+    min-height: 150px;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .chat-bubble {
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 15px;
+    max-width: 80%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  }
+
+  .chat-bubble.user {
+    align-self: flex-end;
+    background: #1976d2;
+    color: #fff;
+  }
+
+  .chat-bubble.bot {
+    align-self: flex-start;
+    background: #fff;
+    color: #333;
+  }
+
+  /* Prompt Sender */
+  #promptSender {
+    margin: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #promptSender input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    font-size: 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  #promptSender button {
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #388e3c;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+  }
+
+  #promptSender button:hover {
+    background: #2e7d32;
+  }
+</style>
+</head>
+<body>
+
+<!-- Stored Components -->
+<div id="storedComponents">
+  <h1>DYNAMIC UI APPLICATION</h1>
+  <div class="stored-list" id="storedList"></div>
+</div>
+
+<!-- Dynamic UI -->
+<div id="dynamicUi"></div>
+
+<!-- Prompt Sender -->
+<div id="promptSender">
+  <input type="text" id="chatInput" placeholder="Type a message...">
+  <button onclick="sendMessage()">Send</button>
+  <button onclick="addComponent()">Add Component</button>
+  <button onclick="clearUi()">Clear UI</button>
+</div>
+
+<script>
+  const storedList = document.getElementById('storedList');
+  const dynamicUi = document.getElementById('dynamicUi');
+  const chatInput = document.getElementById('chatInput');
+
+  let storedComponents = [];
+
+  // Append a chat/message to dynamic UI
+  function appendDynamicUi(message, sender='user') {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${sender}`;
+    bubble.textContent = message;
+    dynamicUi.appendChild(bubble);
+    dynamicUi.scrollTop = dynamicUi.scrollHeight;
+  }
+
+  // Clear dynamic UI
+  function clearUi() {
+    dynamicUi.innerHTML = '';
+  }
+
+  // Add current dynamic UI as a new stored component
+  function addComponent() {
+    const content = dynamicUi.innerHTML;
+    if (!content) return;
+    const component = { id: Date.now(), content };
+    storedComponents.push(component);
+    renderStoredComponents();
+    clearUi();
+  }
+
+  // Render stored components
+  function renderStoredComponents() {
+    storedList.innerHTML = '';
+    storedComponents.forEach(comp => {
+      const div = document.createElement('div');
+      div.className = 'stored-item';
+      div.innerHTML = `
+        <div>ID: ${comp.id}</div>
+        <button onclick="changeDynamicUi(${comp.id})">Preview</button>
+        <button onclick="editComponent(${comp.id})">Edit</button>
+        <button onclick="deleteComponent(${comp.id})">Delete</button>
+      `;
+      storedList.appendChild(div);
+    });
+  }
+
+  // Preview a stored component in Dynamic UI
+  function changeDynamicUi(id) {
+    const comp = storedComponents.find(c => c.id === id);
+    if (comp) dynamicUi.innerHTML = comp.content;
+  }
+
+  // Delete stored component
+  function deleteComponent(id) {
+    storedComponents = storedComponents.filter(c => c.id !== id);
+    renderStoredComponents();
+  }
+
+  // Edit component: load into dynamic UI for modification
+  function editComponent(id) {
+    const comp = storedComponents.find(c => c.id === id);
+    if (comp) {
+      dynamicUi.innerHTML = comp.content;
+      deleteComponent(id); // remove original for update
+    }
+  }
+
+  // Send message to backend and append response
+  async function sendMessage() {
+    const message = chatInput.value.trim();
+    if (!message) return;
+
+    appendDynamicUi(message, 'user');
+    chatInput.value = '';
+
+    try {
+      const response = await fetch('http://localhost:8000/prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: message })
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const data = await response.json();
+      try{
+        console.log("Data after conversion : " , JSON.parse(data.data))
+      }
+      catch(err)
+      {
+        console.log("Error while Converting : " , err)
+      }
+      const reply = data.data || 'No response from server.';
+      appendDynamicUi(reply, 'bot');
+    } catch (error) {
+      appendDynamicUi('Error connecting to backend.', 'bot');
+      console.error(error);
+    }
+  }
+</script>
+</body>
+</html>
+
+
+<!-- till here sent and received proper json -->

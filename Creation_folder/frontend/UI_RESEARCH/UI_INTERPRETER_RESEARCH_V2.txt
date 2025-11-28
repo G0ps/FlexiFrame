@@ -1,0 +1,331 @@
+Fixed a async problem
+
+
+
+UI Schema & Interpreter — Comprehensive Summary
+
+This document describes the schema-driven UI model and the interpreter/engine. It explains the schema structure, function compilation with async handling, event wiring, parameter typing, networking helpers, execution flow, examples, validation, security considerations, and extension points.
+
+1. High-level Purpose
+
+A declarative, JSON-driven UI system that:
+
+Defines UI structure (pure HTML elements), CSS, and executable logic in a single schema.
+
+Compiles function logic into real async JavaScript functions stored in a global registry (FUNCTIONS_SET / ALL_FUNCTIONS).
+
+Renders DOM (no React, no JSX) and injects CSS at runtime.
+
+Binds events to compiled functions, passing typed parameters extracted from the DOM.
+
+Supports nested function calls (logic may call other registered functions).
+
+Includes a generic HTTP helper layer (doGet, doPost, doPut, doPatch, doDelete) with sensible defaults.
+
+This is suitable for dynamic UIs driven by remote schemas, low-footprint pages, or CMS-driven frontends.
+
+2. Schema Shape (Top-Level)
+{
+  "functions": [ /* compiled to FUNCTIONS_SET */ ],
+  "elements": [ /* declarative DOM tree */ ],
+  "css": [ /* list of selector+rules blocks */ ]
+}
+
+2.1 functions Item
+{
+  "function_id": "unique-id",
+  "name": "optionalName",
+  "params": [
+    { "name": "p1", "type": "number" }
+  ],
+  "logic": "/* JS code executed in strict mode */"
+}
+
+
+function_id: registry key used by events and other functions.
+
+params: ordered parameter list with explicit name and type.
+
+Supported types: number, string, boolean, element, object, array.
+
+logic: only the function body, not a full function declaration. The interpreter wraps it in an async arrow function.
+
+Nested Calls
+
+Functions may call other registered functions via ALL_FUNCTIONS:
+
+const a = await ALL_FUNCTIONS['parse_num'](rawA);
+const result = await ALL_FUNCTIONS['multiply'](a, b);
+
+
+Because compiled functions are real async JS functions, nested calls work naturally.
+
+2.2 elements Item
+
+Declarative DOM nodes:
+
+{
+  "type": "div|button|input|p|h1|...",
+  "id": "optional-id",
+  "class": "css-class",
+  "text": "textContent",
+  "attributes": { "placeholder": "...", "type": "text" },
+  "children": [ /* nested elements */ ],
+  "events": [
+    {
+      "event": "click|change|input|submit",
+      "function_id": "handle_fn",
+      "params": [
+        { "from": "element", "id": "fieldId", "extract": "value|text", "type": "number" }
+      ]
+    }
+  ]
+}
+
+
+Events reference a function_id and a typed params array.
+
+The interpreter extracts values from DOM, casts them to the declared type, and passes them to the function.
+
+2.3 css Item
+{ "selector": ".my-class", "rules": "padding:8px; color:#222;" }
+
+
+Engine concatenates all rules and injects into a <style> tag at runtime.
+
+3. Interpreter Architecture — Core Components
+
+Schema Loader
+Accepts a JSON schema (local variable, fetched from server, or via WebSocket).
+
+Function Compiler with Async Handling
+
+function compileFunctions(functions) {
+    functions.forEach(func => {
+        const paramNames = func.params.map(p => p.name);
+        const wrappedLogic = `"use strict"; return (async (${paramNames.join(",")}) => { ${func.logic} })();`;
+        ALL_FUNCTIONS[func.name] = (...args) => new Function(...paramNames, wrappedLogic)(...args);
+    });
+}
+
+
+Logic must contain only the function body, not async function(...) {}.
+
+Wrapper (async (...) => { ... })() ensures await works.
+
+Nested calls via ALL_FUNCTIONS remain valid.
+
+CSS Injector
+Concatenate css blocks and inject them into <style>.
+
+DOM Renderer
+Recursively create DOM nodes (document.createElement), set attributes, append children, and attach events.
+
+Event Binder & Param Extraction
+
+Event handlers are async:
+
+element.addEventListener(event.event, async () => {
+    const args = event.params.map(p => extractAndCast(p));
+    await ALL_FUNCTIONS[event.function_id](...args);
+});
+
+
+extractAndCast(p) handles:
+
+number → Number(raw)
+
+boolean → raw === 'true' || Boolean(raw)
+
+string → String(raw)
+
+element → DOM element reference
+
+object/array → parse JSON
+
+Network Helpers (Global Async)
+
+async function doPost(url, body, headers={}) {
+    headers = Object.assign({ "Content-Type": "application/json", "Accept": "application/json" }, headers);
+    const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    return await res.json();
+}
+
+
+Similarly: doGet, doPut, doPatch, doDelete.
+
+Functions in schema can await doPost(...) or call doGet(...).
+
+4. Example End-to-End Schema (Async Enabled)
+{
+  "functions": [
+    { "function_id":"parse_num", "params":[{"name":"x","type":"string"}], "logic":"return Number(x);" },
+    { "function_id":"mul", "params":[{"name":"a","type":"number"},{"name":"b","type":"number"}], "logic":"return a*b;" },
+    { "function_id":"calc", "params":[{"name":"x","type":"string"},{"name":"y","type":"string"}],
+      "logic": "const a=await ALL_FUNCTIONS['parse_num'](x); const b=await ALL_FUNCTIONS['parse_num'](y); return await ALL_FUNCTIONS['mul'](a,b);"
+    }
+  ],
+  "elements": [
+    { "type":"input", "id":"A", "attributes":{"placeholder":"A"} },
+    { "type":"input", "id":"B", "attributes":{"placeholder":"B"} },
+    { "type":"button", "text":"Compute",
+      "events":[{"event":"click","function_id":"calc","params":[
+        {"from":"element","id":"A","extract":"value","type":"string"},
+        {"from":"element","id":"B","extract":"value","type":"string"}
+      ]}]
+    }
+  ],
+  "css": [ { "selector":"button","rules":"padding:8px 12px;" } ]
+}
+
+
+Clicking Compute triggers async chain: calc → parse_num → mul.
+
+Output can be displayed in the DOM via a show function or additional element.
+
+5. Runtime Flow (Step-by-Step)
+
+renderUI(schema) is called.
+
+compileFunctions(schema.functions) builds async functions in ALL_FUNCTIONS.
+
+renderCSS(schema.css) writes style rules.
+
+createElement() recursively builds the DOM.
+
+Event triggers:
+
+Extract DOM values.
+
+Cast values to declared types.
+
+Call await ALL_FUNCTIONS[function_id](...args).
+
+Nested calls execute within the same async runtime.
+
+6. Function Logic Patterns
+
+Simple pure function
+
+"logic": "return a + b;"
+
+
+Nested async call
+
+"logic": "const x = await ALL_FUNCTIONS['parse_num'](a); return await ALL_FUNCTIONS['mul'](x, 10);"
+
+
+DOM-aware
+
+"logic": "document.getElementById('out').textContent = 'OK';"
+
+
+HTTP inside function
+
+"logic": "const res = await doPost('/api', {a:b}); document.getElementById('out').textContent = JSON.stringify(res);"
+
+7. Key Implementation Details
+
+Strict mode: "use strict"; ensures safe execution.
+
+Functions stored as real functions: ALL_FUNCTIONS[id] = compiledFunction.
+
+Typed params: all event params are cast before passing.
+
+Async support: wrapper allows await inside schema logic.
+
+Error handling: try/catch in function logic; interpreter should log missing functions or elements.
+
+8. Security Considerations
+
+Logic execution is potentially dangerous — only load trusted schemas.
+
+Network requests must respect CORS and origin rules.
+
+Optional sandboxing: iframe or web worker to limit global access.
+
+Validate schema shape, param types, and event bindings before compiling.
+
+9. Validation Rules
+
+function_id unique.
+
+All params have name and type.
+
+Events reference existing functions.
+
+Event param from values: element|literal|constant|global.
+
+Safe attribute names and CSS selectors.
+
+Limit function logic length; prevent eval-like constructs inside logic.
+
+10. Extension Points / Roadmap
+
+Async function flag in schema ("async": true).
+
+Sandboxed execution (iframe/worker).
+
+Dynamic schema updates with DOM patching.
+
+Component templates and reuse.
+
+Conditional/computed CSS.
+
+Global state object.
+
+Schema versioning and migration.
+
+Schema validator with detailed errors.
+
+11. Testing Checklist
+
+Unit: validate compilation and param order.
+
+Integration: simulate events and verify async calls.
+
+E2E: schema → UI → user actions → DOM changes.
+
+Security: ensure sandboxing or trusted sources.
+
+12. Concrete Example (Schema → Expected UI)
+{
+  "functions":[
+    {"function_id":"parse_num","params":[{"name":"x","type":"string"}],"logic":"return Number(x);"},
+    {"function_id":"sum","params":[{"name":"a","type":"number"},{"name":"b","type":"number"}],"logic":"return a+b;"},
+    {"function_id":"show","params":[{"name":"txt","type":"string"}],"logic":"document.getElementById('out').textContent = txt;"}
+  ],
+  "elements":[
+    {"type":"input","id":"A"},
+    {"type":"input","id":"B"},
+    {"type":"button","text":"Add",
+      "events":[{"event":"click","function_id":"show","params":[
+        {"from":"element","id":"A","extract":"value","type":"string"},
+        {"from":"element","id":"B","extract":"value","type":"string"}
+      ]}]
+    },
+    {"type":"p","id":"out","text":""}
+  ],
+  "css":[{"selector":"button","rules":"padding:8px;"}]
+}
+
+
+Clicking button: inputs are cast, show is invoked.
+
+If show called async nested functions, await works correctly.
+
+13. Summary Notes
+
+System is minimal, typed, DOM-first, async-safe.
+
+Compiles real async functions, handles nested calls, typed params, DOM extraction, and HTTP helpers.
+
+Production improvements: schema validation, sandboxing, incremental DOM updates, async compiler variant.
+
+This version resolves both:
+
+SyntaxError: function statements require a function name
+
+await is only valid in async functions
+
+by storing only the function body in the schema and wrapping compiled functions in async arrow functions.
